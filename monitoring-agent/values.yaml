@@ -13,6 +13,11 @@ kube-prometheus:
           # Cluster identifier. Must be the same that is used by the Multicluster Orchestrator
           replacement: "cluster1"
 
-# TODO: add host name relabel to node-exporter jobs
+  node-exporter:
+    serviceMonitor:
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_pod_node_name]
+          targetLabel: node  
+
   alertmanager:
     enabled: false
