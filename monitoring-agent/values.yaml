@@ -1,6 +1,23 @@
 kube-prometheus:
   prometheus:
     remoteWrite:
+
+    # Remote Thanos Receive endpoint. Configured during Monitoring Manager install on thanos.receive.ingress.hostname
     - url: http://thanos-receive.testbed1.cognifog.eu:30908/api/v1/receive
+
+      writeRelabelConfigs:
+        - sourceLabels: [__name__]
+          regex: (.*)
+          targetLabel: cluster
+
+          # Cluster identifier. Must be the same that is used by the Multicluster Orchestrator
+          replacement: "cluster1"
+
+  node-exporter:
+    serviceMonitor:
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_pod_node_name]
+          targetLabel: node  
+
   alertmanager:
     enabled: false
