@@ -1,0 +1,1574 @@
+---
+# Source: monitoring-agent/charts/kube-prometheus/charts/kube-state-metrics/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: monit-agent-kube-state-metrics
+  namespace: "cognifog-dev"
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-state-metrics
+    app.kubernetes.io/version: 2.10.0
+    helm.sh/chart: kube-state-metrics-3.8.2
+automountServiceAccountToken: true
+---
+# Source: monitoring-agent/charts/kube-prometheus/charts/node-exporter/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: monit-agent-node-exporter
+  namespace: "cognifog-dev"
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: node-exporter
+    app.kubernetes.io/version: 1.6.1
+    helm.sh/chart: node-exporter-3.9.2
+automountServiceAccountToken: true
+---
+# Source: monitoring-agent/charts/kube-prometheus/templates/blackbox-exporter/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: monit-agent-kube-prometheu-blackbox-exporter
+  namespace: "cognifog-dev"
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-prometheus
+    app.kubernetes.io/version: 0.69.1
+    helm.sh/chart: kube-prometheus-8.22.4
+    app.kubernetes.io/component: blackbox-exporter
+automountServiceAccountToken: true
+---
+# Source: monitoring-agent/charts/kube-prometheus/templates/prometheus-operator/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: monit-agent-kube-prometheu-operator
+  namespace: "cognifog-dev"
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-prometheus
+    app.kubernetes.io/version: 0.69.1
+    helm.sh/chart: kube-prometheus-8.22.4
+    app.kubernetes.io/component: operator
+automountServiceAccountToken: true
+---
+# Source: monitoring-agent/charts/kube-prometheus/templates/prometheus/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: monit-agent-kube-prometheu-prometheus
+  namespace: "cognifog-dev"
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-prometheus
+    app.kubernetes.io/version: 0.69.1
+    helm.sh/chart: kube-prometheus-8.22.4
+    app.kubernetes.io/component: prometheus
+automountServiceAccountToken: true
+---
+# Source: monitoring-agent/charts/kube-prometheus/templates/blackbox-exporter/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: monit-agent-kube-prometheu-blackbox-exporter
+  namespace: "cognifog-dev"
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-prometheus
+    app.kubernetes.io/version: 0.69.1
+    helm.sh/chart: kube-prometheus-8.22.4
+    app.kubernetes.io/component: blackbox-exporter
+data:
+  config.yml: |-
+    "modules":
+      "http_2xx":
+        "http":
+          "preferred_ip_protocol": "ip4"
+        "prober": "http"
+      "http_post_2xx":
+        "http":
+          "method": "POST"
+          "preferred_ip_protocol": "ip4"
+        "prober": "http"
+      "irc_banner":
+        "prober": "tcp"
+        "tcp":
+          "preferred_ip_protocol": "ip4"
+          "query_response":
+          - "send": "NICK prober"
+          - "send": "USER prober prober prober :prober"
+          - "expect": "PING :([^ ]+)"
+            "send": "PONG ${1}"
+          - "expect": "^:[^ ]+ 001"
+      "pop3s_banner":
+        "prober": "tcp"
+        "tcp":
+          "preferred_ip_protocol": "ip4"
+          "query_response":
+          - "expect": "^+OK"
+          "tls": true
+          "tls_config":
+            "insecure_skip_verify": false
+      "ssh_banner":
+        "prober": "tcp"
+        "tcp":
+          "preferred_ip_protocol": "ip4"
+          "query_response":
+          - "expect": "^SSH-2.0-"
+      "tcp_connect":
+        "prober": "tcp"
+        "tcp":
+          "preferred_ip_protocol": "ip4"
+---
+# Source: monitoring-agent/charts/kube-prometheus/templates/prometheus-operator/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: monit-agent-kube-prometheu-operator
+  namespace: "cognifog-dev"
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-prometheus
+    app.kubernetes.io/version: 0.69.1
+    helm.sh/chart: kube-prometheus-8.22.4
+    app.kubernetes.io/component: operator
+data:
+  prometheus-config-reloader: docker.io/bitnami/prometheus-operator:0.69.1-debian-11-r0
+---
+# Source: monitoring-agent/charts/kube-prometheus/charts/kube-state-metrics/templates/clusterrole.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: monit-agent-kube-state-metrics-cognifog-dev
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-state-metrics
+    app.kubernetes.io/version: 2.10.0
+    helm.sh/chart: kube-state-metrics-3.8.2
+rules:
+  - apiGroups: ["certificates.k8s.io"]
+    resources:
+      - certificatesigningrequests
+    verbs: ["list", "watch"]
+  - apiGroups: [""]
+    resources:
+      - configmaps
+    verbs: ["list", "watch"]
+  - apiGroups: ["batch"]
+    resources:
+      - cronjobs
+    verbs: ["list", "watch"]
+  - apiGroups: ["extensions", "apps"]
+    resources:
+      - daemonsets
+    verbs: ["list", "watch"]
+  - apiGroups: ["extensions", "apps"]
+    resources:
+      - deployments
+    verbs: ["list", "watch"]
+  - apiGroups: [""]
+    resources:
+      - endpoints
+    verbs: ["list", "watch"]
+  - apiGroups: ["autoscaling"]
+    resources:
+      - horizontalpodautoscalers
+    verbs: ["list", "watch"]
+  - apiGroups: ["extensions", "networking.k8s.io"]
+    resources:
+      - ingresses
+    verbs: ["list", "watch"]
+  - apiGroups: ["batch"]
+    resources:
+      - jobs
+    verbs: ["list", "watch"]
+  - apiGroups: [""]
+    resources:
+      - limitranges
+    verbs: ["list", "watch"]
+  - apiGroups: ["admissionregistration.k8s.io"]
+    resources:
+      - mutatingwebhookconfigurations
+    verbs: ["list", "watch"]
+  - apiGroups: [""]
+    resources:
+      - namespaces
+    verbs: ["list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources:
+      - networkpolicies
+    verbs: ["list", "watch"]
+  - apiGroups: [""]
+    resources:
+      - nodes
+    verbs: ["list", "watch"]
+  - apiGroups: [""]
+    resources:
+      - persistentvolumeclaims
+    verbs: ["list", "watch"]
+  - apiGroups: [""]
+    resources:
+      - persistentvolumes
+    verbs: ["list", "watch"]
+  - apiGroups: ["policy"]
+    resources:
+      - poddisruptionbudgets
+    verbs: ["list", "watch"]
+  - apiGroups: [""]
+    resources:
+      - pods
+    verbs: ["list", "watch"]
+  - apiGroups: ["extensions", "apps"]
+    resources:
+      - replicasets
+    verbs: ["list", "watch"]
+  - apiGroups: [""]
+    resources:
+      - replicationcontrollers
+    verbs: ["list", "watch"]
+  - apiGroups: [""]
+    resources:
+      - resourcequotas
+    verbs: ["list", "watch"]
+  - apiGroups: [""]
+    resources:
+      - secrets
+    verbs: ["list", "watch"]
+  - apiGroups: [""]
+    resources:
+      - services
+    verbs: ["list", "watch"]
+  - apiGroups: ["apps"]
+    resources:
+      - statefulsets
+    verbs: ["list", "watch"]
+  - apiGroups: ["storage.k8s.io"]
+    resources:
+      - storageclasses
+    verbs: ["list", "watch"]
+  - apiGroups: ["storage.k8s.io"]
+    resources:
+      - volumeattachments
+    verbs: ["list", "watch"]
+---
+# Source: monitoring-agent/charts/kube-prometheus/templates/prometheus-operator/clusterrole.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: monit-agent-kube-prometheu-operator
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-prometheus
+    app.kubernetes.io/version: 0.69.1
+    helm.sh/chart: kube-prometheus-8.22.4
+    app.kubernetes.io/component: operator
+rules:
+  - apiGroups:
+      - apiextensions.k8s.io
+    resources:
+      - customresourcedefinitions
+    verbs:
+      - create
+  - apiGroups:
+      - apiextensions.k8s.io
+    resourceNames:
+      - alertmanagers.monitoring.coreos.com
+      - podmonitors.monitoring.coreos.com
+      - prometheuses.monitoring.coreos.com
+      - prometheusrules.monitoring.coreos.com
+      - servicemonitors.monitoring.coreos.com
+      - thanosrulers.monitoring.coreos.com
+      - probes.monitoring.coreos.com
+      - scrapeconfigs.monitoring.coreos.com
+      - prometheusagents.monitoring.coreos.com
+    resources:
+      - customresourcedefinitions
+    verbs:
+      - get
+      - update
+  - apiGroups:
+      - monitoring.coreos.com
+    resources:
+      - alertmanagers
+      - alertmanagers/status
+      - alertmanagers/finalizers
+      - alertmanagerconfigs
+      - prometheuses
+      - prometheuses/status
+      - prometheuses/finalizers
+      - thanosrulers
+      - thanosrulers/finalizers
+      - servicemonitors
+      - podmonitors
+      - probes
+      - prometheusrules
+      - scrapeconfigs
+      - prometheusagents
+      - prometheusagents/finalizers
+      - prometheusagents/status
+    verbs:
+      - '*'
+  - apiGroups:
+      - apps
+    resources:
+      - statefulsets
+    verbs:
+      - '*'
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+      - secrets
+    verbs:
+      - '*'
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - list
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - services
+      - services/finalizers
+      - endpoints
+    verbs:
+      - get
+      - create
+      - update
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingresses
+    verbs:
+      - get
+      - list
+      - watch
+---
+# Source: monitoring-agent/charts/kube-prometheus/templates/prometheus/clusterrole.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: monit-agent-kube-prometheu-prometheus
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-prometheus
+    app.kubernetes.io/version: 0.69.1
+    helm.sh/chart: kube-prometheus-8.22.4
+    app.kubernetes.io/component: prometheus
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - nodes/metrics
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+      - nodes/proxy
+      - services
+      - endpoints
+      - pods
+    verbs:
+      - "get"
+      - "list"
+      - "watch"
+  - apiGroups:
+      - extensions
+      - "networking.k8s.io"
+    resources:
+      - ingresses
+    verbs:
+      - get
+      - list
+      - watch
+  - nonResourceURLs:
+      - "/metrics"
+    verbs:
+      - "get"
+---
+# Source: monitoring-agent/charts/kube-prometheus/charts/kube-state-metrics/templates/clusterrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: monit-agent-kube-state-metrics-cognifog-dev
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-state-metrics
+    app.kubernetes.io/version: 2.10.0
+    helm.sh/chart: kube-state-metrics-3.8.2
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: monit-agent-kube-state-metrics-cognifog-dev
+subjects:
+  - kind: ServiceAccount
+    name: monit-agent-kube-state-metrics
+    namespace: "cognifog-dev"
+---
+# Source: monitoring-agent/charts/kube-prometheus/templates/prometheus-operator/clusterrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: monit-agent-kube-prometheu-operator
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-prometheus
+    app.kubernetes.io/version: 0.69.1
+    helm.sh/chart: kube-prometheus-8.22.4
+    app.kubernetes.io/component: operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: monit-agent-kube-prometheu-operator
+subjects:
+  - kind: ServiceAccount
+    name: monit-agent-kube-prometheu-operator
+    namespace: "cognifog-dev"
+---
+# Source: monitoring-agent/charts/kube-prometheus/templates/prometheus/clusterrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: monit-agent-kube-prometheu-prometheus
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-prometheus
+    app.kubernetes.io/version: 0.69.1
+    helm.sh/chart: kube-prometheus-8.22.4
+    app.kubernetes.io/component: prometheus
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: monit-agent-kube-prometheu-prometheus
+subjects:
+  - kind: ServiceAccount
+    name: monit-agent-kube-prometheu-prometheus
+    namespace: "cognifog-dev"
+---
+# Source: monitoring-agent/charts/kube-prometheus/charts/kube-state-metrics/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: monit-agent-kube-state-metrics
+  namespace: "cognifog-dev"
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-state-metrics
+    app.kubernetes.io/version: 2.10.0
+    helm.sh/chart: kube-state-metrics-3.8.2
+  annotations:
+spec:
+  type: ClusterIP
+  sessionAffinity: None
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      nodePort: null
+    
+  selector:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/name: kube-state-metrics
+---
+# Source: monitoring-agent/charts/kube-prometheus/charts/node-exporter/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: monit-agent-node-exporter
+  namespace: "cognifog-dev"
+  annotations:
+    prometheus.io/scrape: "true"
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: node-exporter
+    app.kubernetes.io/version: 1.6.1
+    helm.sh/chart: node-exporter-3.9.2
+    jobLabel: node-exporter
+spec:
+  type: ClusterIP
+  sessionAffinity: None
+  ports:
+    - name: metrics
+      port: 9100
+      targetPort: metrics
+      nodePort: null
+  selector:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/name: node-exporter
+---
+# Source: monitoring-agent/charts/kube-prometheus/templates/blackbox-exporter/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: monit-agent-kube-prometheu-blackbox-exporter
+  namespace: "cognifog-dev"
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-prometheus
+    app.kubernetes.io/version: 0.69.1
+    helm.sh/chart: kube-prometheus-8.22.4
+    app.kubernetes.io/component: blackbox-exporter
+spec:
+  type: ClusterIP
+  sessionAffinity: None
+  publishNotReadyAddresses: true
+  ports:
+    - name: http
+      port: 19115
+      targetPort: http
+      protocol: TCP
+      nodePort: null
+  selector:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/name: kube-prometheus
+    app.kubernetes.io/component: blackbox-exporter
+---
+# Source: monitoring-agent/charts/kube-prometheus/templates/exporters/core-dns/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: monit-agent-kube-prometheu-coredns
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-prometheus
+    app.kubernetes.io/version: 0.69.1
+    helm.sh/chart: kube-prometheus-8.22.4
+    app.kubernetes.io/component: monit-agent-kube-prometheu-coredns
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - name: http-metrics
+      port: 9153
+      protocol: TCP
+      targetPort: 9153
+  selector:
+    k8s-app: kube-dns
+---
+# Source: monitoring-agent/charts/kube-prometheus/templates/exporters/kube-controller-manager/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: monit-agent-kube-prometheu-kube-controller-manager
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-prometheus
+    app.kubernetes.io/version: 0.69.1
+    helm.sh/chart: kube-prometheus-8.22.4
+    app.kubernetes.io/component: kube-controller-manager
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - name: http-metrics
+      port: 10252
+      protocol: TCP
+      targetPort: 10252
+  selector:
+    component: kube-controller-manager
+---
+# Source: monitoring-agent/charts/kube-prometheus/templates/exporters/kube-proxy/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: monit-agent-kube-prometheu-kube-proxy
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-prometheus
+    app.kubernetes.io/version: 0.69.1
+    helm.sh/chart: kube-prometheus-8.22.4
+    app.kubernetes.io/component: kube-proxy
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - name: http-metrics
+      port: 10249
+      protocol: TCP
+      targetPort: 10249
+  selector:
+    k8s-app: kube-proxy
+---
+# Source: monitoring-agent/charts/kube-prometheus/templates/exporters/kube-scheduler/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: monit-agent-kube-prometheu-kube-scheduler
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-prometheus
+    app.kubernetes.io/version: 0.69.1
+    helm.sh/chart: kube-prometheus-8.22.4
+    app.kubernetes.io/component: kube-scheduler
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - name: http-metrics
+      port: 10251
+      protocol: TCP
+      targetPort: 10251
+  selector:
+    component: kube-scheduler
+---
+# Source: monitoring-agent/charts/kube-prometheus/templates/prometheus-operator/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: monit-agent-kube-prometheu-operator
+  namespace: "cognifog-dev"
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-prometheus
+    app.kubernetes.io/version: 0.69.1
+    helm.sh/chart: kube-prometheus-8.22.4
+    app.kubernetes.io/component: operator
+spec:
+  type: ClusterIP
+  sessionAffinity: None
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+  selector:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/name: kube-prometheus
+    app.kubernetes.io/component: operator
+---
+# Source: monitoring-agent/charts/kube-prometheus/templates/prometheus/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: monit-agent-kube-prometheu-prometheus
+  namespace: "cognifog-dev"
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-prometheus
+    app.kubernetes.io/version: 0.69.1
+    helm.sh/chart: kube-prometheus-8.22.4
+    app.kubernetes.io/component: prometheus
+spec:
+  type: ClusterIP
+  sessionAffinity: None
+  ports:
+    - name: http
+      port: 9090
+      targetPort: 9090
+      protocol: TCP
+  selector:
+    
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/component: prometheus
+    prometheus: monit-agent-kube-prometheu-prometheus
+---
+# Source: monitoring-agent/charts/kube-prometheus/charts/node-exporter/templates/daemonset.yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: monit-agent-node-exporter
+  namespace: "cognifog-dev"
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: node-exporter
+    app.kubernetes.io/version: 1.6.1
+    helm.sh/chart: node-exporter-3.9.2
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: monit-agent
+      app.kubernetes.io/name: node-exporter
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate
+  minReadySeconds: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: monit-agent
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: node-exporter
+        app.kubernetes.io/version: 1.6.1
+        helm.sh/chart: node-exporter-3.9.2
+    spec:
+      
+      serviceAccountName: monit-agent-node-exporter
+      affinity:
+        podAffinity:
+          
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/instance: monit-agent
+                    app.kubernetes.io/name: node-exporter
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+        nodeAffinity:
+          
+      securityContext:
+        fsGroup: 1001
+      containers:
+        - name: node-exporter
+          image: docker.io/bitnami/node-exporter:1.6.1-debian-11-r79
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            privileged: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+            runAsUser: 1001
+            seccompProfile:
+              type: RuntimeDefault
+          args:
+            - --path.procfs=/host/proc
+            - --path.sysfs=/host/sys
+            - --web.listen-address=0.0.0.0:9100
+            - --collector.filesystem.ignored-fs-types=^(autofs|binfmt_misc|cgroup|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|mqueue|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|sysfs|tracefs)$
+            - --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker/.+)($|/)
+          envFrom:
+          ports:
+            - name: metrics
+              containerPort: 9100
+              protocol: TCP
+          livenessProbe:
+            failureThreshold: 6
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+            httpGet:
+              path: /
+              port: metrics
+          readinessProbe:
+            failureThreshold: 6
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+            httpGet:
+              path: /
+              port: metrics
+          resources:
+            limits: {}
+            requests: {}
+          volumeMounts:
+            - name: proc
+              mountPath: /host/proc
+              readOnly: true
+            - name: sys
+              mountPath: /host/sys
+              readOnly: true
+      hostNetwork: true
+      hostPID: true
+      volumes:
+        - name: proc
+          hostPath:
+            path: /proc
+        - name: sys
+          hostPath:
+            path: /sys
+---
+# Source: monitoring-agent/charts/kube-prometheus/charts/kube-state-metrics/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monit-agent-kube-state-metrics
+  namespace: "cognifog-dev"
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-state-metrics
+    app.kubernetes.io/version: 2.10.0
+    helm.sh/chart: kube-state-metrics-3.8.2
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: monit-agent
+      app.kubernetes.io/name: kube-state-metrics
+  replicas: 1
+  strategy:
+    {}
+  minReadySeconds: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: monit-agent
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: kube-state-metrics
+        app.kubernetes.io/version: 2.10.0
+        helm.sh/chart: kube-state-metrics-3.8.2
+    spec:
+      
+      affinity:
+        podAffinity:
+          
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/instance: monit-agent
+                    app.kubernetes.io/name: kube-state-metrics
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+        nodeAffinity:
+          
+      hostNetwork: false
+      securityContext:
+        fsGroup: 1001
+      serviceAccountName: monit-agent-kube-state-metrics
+      containers:
+        - name: kube-state-metrics
+          image: docker.io/bitnami/kube-state-metrics:2.10.0-debian-11-r35
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            privileged: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+            runAsUser: 1001
+            seccompProfile:
+              type: RuntimeDefault
+          args:
+            - --resources=certificatesigningrequests
+            - --resources=configmaps
+            - --resources=cronjobs
+            - --resources=daemonsets
+            - --resources=deployments
+            - --resources=endpoints
+            - --resources=horizontalpodautoscalers
+            - --resources=ingresses
+            - --resources=jobs
+            - --resources=limitranges
+            - --resources=mutatingwebhookconfigurations
+            - --resources=namespaces
+            - --resources=networkpolicies
+            - --resources=nodes
+            - --resources=persistentvolumeclaims
+            - --resources=persistentvolumes
+            - --resources=poddisruptionbudgets
+            - --resources=pods
+            - --resources=replicasets
+            - --resources=replicationcontrollers
+            - --resources=resourcequotas
+            - --resources=secrets
+            - --resources=services
+            - --resources=statefulsets
+            - --resources=storageclasses
+            - --resources=volumeattachments
+          envFrom:
+          resources:
+            limits: {}
+            requests: {}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            failureThreshold: 6
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+            httpGet:
+              path: /healthz
+              port: http
+          readinessProbe:
+            failureThreshold: 6
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+            httpGet:
+              path: /
+              port: http
+---
+# Source: monitoring-agent/charts/kube-prometheus/templates/blackbox-exporter/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monit-agent-kube-prometheu-blackbox-exporter
+  namespace: "cognifog-dev"
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-prometheus
+    app.kubernetes.io/version: 0.69.1
+    helm.sh/chart: kube-prometheus-8.22.4
+    app.kubernetes.io/component: blackbox-exporter
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: monit-agent
+      app.kubernetes.io/name: kube-prometheus
+      app.kubernetes.io/component: blackbox-exporter
+  template:
+    metadata:
+      annotations:
+        checksum/config: 55941c0d0148b38f421d4be3c203ce86514e98da0d0af5d037baeda052737ca3
+      labels:
+        app.kubernetes.io/instance: monit-agent
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: kube-prometheus
+        app.kubernetes.io/version: 0.69.1
+        helm.sh/chart: kube-prometheus-8.22.4
+        app.kubernetes.io/component: blackbox-exporter
+    spec:
+      serviceAccountName: monit-agent-kube-prometheu-blackbox-exporter
+      
+      affinity:
+        podAffinity:
+          
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/instance: monit-agent
+                    app.kubernetes.io/name: kube-prometheus
+                    app.kubernetes.io/component: blackbox-exporter
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+        nodeAffinity:
+          
+      securityContext:
+        fsGroup: 1001
+      initContainers:
+      containers:
+        - name: blackbox-exporter
+          image: docker.io/bitnami/blackbox-exporter:0.24.0-debian-11-r140
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            privileged: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+            runAsUser: 1001
+            seccompProfile:
+              type: RuntimeDefault
+          args:
+            - --config.file=/bitnami/blackbox-exporter/conf/config.yml
+            - --web.listen-address=:19115
+          envFrom:
+          ports:
+            - containerPort: 19115
+              name: http
+          resources:
+            limits: {}
+            requests: {}
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+            httpGet:
+              port: http
+          readinessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+            httpGet:
+              port: http
+          volumeMounts:
+            - name: blackbox-exporter-config
+              mountPath: /bitnami/blackbox-exporter/conf
+      volumes:
+        - name: blackbox-exporter-config
+          configMap:
+            name: monit-agent-kube-prometheu-blackbox-exporter
+---
+# Source: monitoring-agent/charts/kube-prometheus/templates/prometheus-operator/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monit-agent-kube-prometheu-operator
+  namespace: "cognifog-dev"
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-prometheus
+    app.kubernetes.io/version: 0.69.1
+    helm.sh/chart: kube-prometheus-8.22.4
+    app.kubernetes.io/component: operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: monit-agent
+      app.kubernetes.io/name: kube-prometheus
+      app.kubernetes.io/component: operator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: monit-agent
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: kube-prometheus
+        app.kubernetes.io/version: 0.69.1
+        helm.sh/chart: kube-prometheus-8.22.4
+        app.kubernetes.io/component: operator
+    spec:
+      serviceAccountName: monit-agent-kube-prometheu-operator
+      
+      securityContext:
+        fsGroup: 1001
+      affinity:
+        podAffinity:
+          
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/instance: monit-agent
+                    app.kubernetes.io/name: kube-prometheus
+                    app.kubernetes.io/component: operator
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+        nodeAffinity:
+          
+      containers:
+        - name: prometheus-operator
+          image: docker.io/bitnami/prometheus-operator:0.69.1-debian-11-r0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            privileged: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+            runAsUser: 1001
+            seccompProfile:
+              type: RuntimeDefault
+          args:
+            - --kubelet-service=kube-system/monit-agent-kube-prometheu-kubelet
+            - --log-format=logfmt
+            - --log-level=info
+            - --localhost=127.0.0.1
+            - --prometheus-config-reloader=$(PROMETHEUS_CONFIG_RELOADER)
+          env:
+            - name: PROMETHEUS_CONFIG_RELOADER
+              valueFrom:
+                configMapKeyRef:
+                  name: monit-agent-kube-prometheu-operator
+                  key: prometheus-config-reloader
+          envFrom:
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            failureThreshold: 6
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+            httpGet:
+              path: /metrics
+              port: http
+              scheme: HTTP
+          readinessProbe:
+            failureThreshold: 6
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+            httpGet:
+              path: /metrics
+              port: http
+              scheme: HTTP
+---
+# Source: monitoring-agent/charts/kube-prometheus/templates/prometheus/prometheus.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  name: monit-agent-kube-prometheu-prometheus
+  namespace: "cognifog-dev"
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-prometheus
+    app.kubernetes.io/version: 0.69.1
+    helm.sh/chart: kube-prometheus-8.22.4
+    app.kubernetes.io/component: prometheus
+spec:
+  replicas: 1
+  shards: 1
+  serviceAccountName: monit-agent-kube-prometheu-prometheus
+  serviceMonitorSelector: {}
+  podMonitorSelector: {}
+  probeSelector: {}
+  scrapeConfigSelector: {}
+  alerting:
+    alertmanagers:
+      []
+  image: docker.io/bitnami/prometheus:2.47.2-debian-11-r2
+  externalUrl: http://monit-agent-kube-prometheu-prometheus.cognifog-dev:9090/
+  paused: false
+  logLevel: info
+  logFormat: logfmt
+  listenLocal: false
+  enableAdminAPI: false
+  retention: 10d
+  portName: "web"
+  routePrefix: "/"
+  serviceMonitorNamespaceSelector: {}
+  podMonitorNamespaceSelector: {}
+  probeNamespaceSelector: {}
+  scrapeConfigNamespaceSelector: {}
+  enableRemoteWriteReceiver: false
+  remoteWrite:
+    - url: http://monitoring-manager-thanos-receive:19291/api/v1/receive
+      writeRelabelConfigs:
+      - regex: (.*)
+        replacement: manager
+        sourceLabels:
+        - __name__
+        targetLabel: cluster
+  securityContext:
+    fsGroup: 1001
+  ruleNamespaceSelector: {}
+  ruleSelector: {}
+  podMetadata:
+    labels:
+      
+      app.kubernetes.io/name: prometheus
+      app.kubernetes.io/component: prometheus
+      prometheus: monit-agent-kube-prometheu-prometheus
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/instance: monit-agent
+                app.kubernetes.io/name: kube-prometheus
+                app.kubernetes.io/component: prometheus
+            topologyKey: kubernetes.io/hostname
+          weight: 1  
+  containers:
+    ## This monkey patching is needed until the securityContexts are
+    ## directly patchable via the CRD.
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/issues/3947
+    ## currently implemented with strategic merge
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/user-guides/strategic-merge-patch.md
+    - name: prometheus
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+          - ALL
+        privileged: false
+        readOnlyRootFilesystem: false
+        runAsNonRoot: true
+        runAsUser: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      livenessProbe:
+        httpGet:
+          path: /-/healthy
+          port: web
+          scheme: HTTP
+        initialDelaySeconds: 0
+        periodSeconds: 10
+        timeoutSeconds: 3
+        failureThreshold: 10
+        successThreshold: 1
+      readinessProbe:
+        httpGet:
+          path: /-/ready
+          port: web
+          scheme: HTTP
+        initialDelaySeconds: 0
+        periodSeconds: 10
+        timeoutSeconds: 3
+        failureThreshold: 10
+        successThreshold: 1
+      startupProbe:
+        httpGet:
+          path: /-/ready
+          port: web
+          scheme: HTTP
+        initialDelaySeconds: 0
+        periodSeconds: 15
+        timeoutSeconds: 3
+        failureThreshold: 60
+        successThreshold: 1
+    ## This monkey patching is needed until the securityContexts are
+    ## directly patchable via the CRD.
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/issues/3947
+    ## currently implemented with strategic merge
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/user-guides/strategic-merge-patch.md
+    - name: config-reloader
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+          - ALL
+        privileged: false
+        readOnlyRootFilesystem: false
+        runAsNonRoot: true
+        runAsUser: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      livenessProbe:
+        tcpSocket:
+          port: reloader-web
+        initialDelaySeconds: 10
+        periodSeconds: 10
+        timeoutSeconds: 5
+        failureThreshold: 6
+        successThreshold: 1
+      readinessProbe:
+        tcpSocket:
+          port: reloader-web
+        initialDelaySeconds: 15
+        periodSeconds: 20
+        timeoutSeconds: 5
+        failureThreshold: 6
+        successThreshold: 1
+---
+# Source: monitoring-agent/charts/kube-prometheus/charts/kube-state-metrics/templates/servicemonitor.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: monit-agent-kube-state-metrics
+  namespace: "cognifog-dev"
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-state-metrics
+    app.kubernetes.io/version: 2.10.0
+    helm.sh/chart: kube-state-metrics-3.8.2
+spec:
+  jobLabel: ""
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: monit-agent
+      app.kubernetes.io/name: kube-state-metrics
+  endpoints:
+    - port: http
+      honorLabels: true
+  namespaceSelector:
+    matchNames:
+    - "cognifog-dev"
+---
+# Source: monitoring-agent/charts/kube-prometheus/charts/node-exporter/templates/servicemonitor.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: monit-agent-node-exporter
+  namespace: "cognifog-dev"
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: node-exporter
+    app.kubernetes.io/version: 1.6.1
+    helm.sh/chart: node-exporter-3.9.2
+spec:
+  jobLabel: jobLabel
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: monit-agent
+      app.kubernetes.io/name: node-exporter
+  endpoints:
+    - port: metrics
+      relabelings:
+        - sourceLabels:
+          - __meta_kubernetes_pod_node_name
+          targetLabel: node
+  namespaceSelector:
+    matchNames:
+    - cognifog-dev
+---
+# Source: monitoring-agent/charts/kube-prometheus/templates/exporters/core-dns/servicemonitor.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: monit-agent-kube-prometheu-coredns
+  namespace: "cognifog-dev"
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-prometheus
+    app.kubernetes.io/version: 0.69.1
+    helm.sh/chart: kube-prometheus-8.22.4
+    app.kubernetes.io/component: monit-agent-kube-prometheu-coredns
+spec:
+  jobLabel: k8s-app
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: monit-agent-kube-prometheu-coredns
+  namespaceSelector:
+    matchNames:
+      - kube-system
+  endpoints:
+    - port: http-metrics
+      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+---
+# Source: monitoring-agent/charts/kube-prometheus/templates/exporters/kube-apiserver/servicemonitor.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: monit-agent-kube-prometheu-apiserver
+  namespace: "cognifog-dev"
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-prometheus
+    app.kubernetes.io/version: 0.69.1
+    helm.sh/chart: kube-prometheus-8.22.4
+    app.kubernetes.io/component: apiserver
+spec:
+  jobLabel: component
+  selector:
+    matchLabels:
+      component: apiserver
+      provider: kubernetes
+  namespaceSelector:
+    matchNames:
+      - default
+  endpoints:
+    - port: https
+      scheme: https
+      tlsConfig:
+        caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        serverName: kubernetes
+        insecureSkipVerify: true
+      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+---
+# Source: monitoring-agent/charts/kube-prometheus/templates/exporters/kube-controller-manager/servicemonitor.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: monit-agent-kube-prometheu-kube-controller-manager
+  namespace: "cognifog-dev"
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-prometheus
+    app.kubernetes.io/version: 0.69.1
+    helm.sh/chart: kube-prometheus-8.22.4
+    app.kubernetes.io/component: kube-controller-manager
+spec:
+  jobLabel: component
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: kube-controller-manager
+  namespaceSelector:
+    matchNames:
+      - kube-system
+  endpoints:
+    - port: http-metrics
+      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+---
+# Source: monitoring-agent/charts/kube-prometheus/templates/exporters/kube-proxy/servicemonitor.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: monit-agent-kube-prometheu-kube-proxy
+  namespace: "cognifog-dev"
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-prometheus
+    app.kubernetes.io/version: 0.69.1
+    helm.sh/chart: kube-prometheus-8.22.4
+    app.kubernetes.io/component: kube-proxy
+spec:
+  jobLabel: k8s-app
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: kube-proxy
+  namespaceSelector:
+    matchNames:
+      - kube-system
+  endpoints:
+    - port: http-metrics
+      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+---
+# Source: monitoring-agent/charts/kube-prometheus/templates/exporters/kube-scheduler/servicemonitor.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: monit-agent-kube-prometheu-kube-scheduler
+  namespace: "cognifog-dev"
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-prometheus
+    app.kubernetes.io/version: 0.69.1
+    helm.sh/chart: kube-prometheus-8.22.4
+    app.kubernetes.io/component: kube-scheduler
+spec:
+  jobLabel: component
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: kube-scheduler
+  namespaceSelector:
+    matchNames:
+      - kube-system
+  endpoints:
+    - port: http-metrics
+      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+---
+# Source: monitoring-agent/charts/kube-prometheus/templates/exporters/kubelet/servicemonitor.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: monit-agent-kube-prometheu-kubelet
+  namespace: "cognifog-dev"
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-prometheus
+    app.kubernetes.io/version: 0.69.1
+    helm.sh/chart: kube-prometheus-8.22.4
+    app.kubernetes.io/component: kubelet
+spec:
+  jobLabel: k8s-app
+  selector:
+    matchLabels:
+      k8s-app: kubelet
+  namespaceSelector:
+    matchNames:
+      - kube-system
+  endpoints:
+    - port: https-metrics
+      scheme: https
+      tlsConfig:
+        caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        serverName: kubernetes
+        insecureSkipVerify: true
+      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      honorLabels: true
+    - port: https-metrics
+      scheme: https
+      path: /metrics/cadvisor
+      honorLabels: true
+      tlsConfig:
+        caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        serverName: kubernetes
+        insecureSkipVerify: true
+      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+---
+# Source: monitoring-agent/charts/kube-prometheus/templates/prometheus-operator/servicemonitor.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: monit-agent-kube-prometheu-operator
+  namespace: "cognifog-dev"
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-prometheus
+    app.kubernetes.io/version: 0.69.1
+    helm.sh/chart: kube-prometheus-8.22.4
+    app.kubernetes.io/component: operator
+spec:
+  endpoints:
+    - port: http
+      honorLabels: true
+  jobLabel: ""
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: monit-agent
+      app.kubernetes.io/name: kube-prometheus
+      app.kubernetes.io/component: operator
+  namespaceSelector:
+    matchNames:
+      - "cognifog-dev"
+---
+# Source: monitoring-agent/charts/kube-prometheus/templates/prometheus/servicemonitor.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: monit-agent-kube-prometheu-prometheus
+  namespace: "cognifog-dev"
+  labels:
+    app.kubernetes.io/instance: monit-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-prometheus
+    app.kubernetes.io/version: 0.69.1
+    helm.sh/chart: kube-prometheus-8.22.4
+    app.kubernetes.io/component: prometheus
+spec:
+  jobLabel: ""
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: prometheus
+  namespaceSelector:
+    matchNames:
+      - "cognifog-dev"
+  endpoints:
+    - port: http
+      path: /metrics
