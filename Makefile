@@ -1,11 +1,10 @@
 install:
-	helm upgrade -i  monitoring-agent monitoring-agent/ -f values.yaml -n cognifog-dev
+	helm upgrade -i  monitoring-agent monitoring-agent/ -f values.yaml
 
 uninstall:
-	helm uninstall monitoring-agent -n cognifog-dev
+	helm uninstall monitoring-agent
 
 template:
 	helm template --name-template monit-agent \
 	-f values-cognifog-intra-testbed.yaml monitoring-agent/ \
-	-n cognifog-dev \
 	> jenkins/manifests.yaml
