@@ -26,7 +26,7 @@ pipeline {
             steps {
                 withKubeConfig([credentialsId: 'k8s-jenkins']) {
                     sh '''
-                    kubectl apply -f jenkins/prometheus-crds/
+                    kubectl apply --server-side -f jenkins/prometheus-crds/
                     kubectl apply -f jenkins/manifests.yaml
                     '''
                }
