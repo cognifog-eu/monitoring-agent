@@ -1,4 +1,17 @@
 ---
+# Source: monitoring-agent/charts/kepler/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: monit-agent-kepler
+  namespace: cognifog-dev
+  labels:
+    helm.sh/chart: kepler-0.5.12
+    app.kubernetes.io/name: kepler
+    app.kubernetes.io/component: exporter
+    app.kubernetes.io/version: "release-0.7.12"
+    app.kubernetes.io/managed-by: Helm
+---
 # Source: monitoring-agent/charts/kube-prometheus/charts/kube-state-metrics/templates/serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
@@ -142,6 +155,23 @@ metadata:
     app.kubernetes.io/component: operator
 data:
   prometheus-config-reloader: docker.io/bitnami/prometheus-operator:0.69.1-debian-11-r0
+---
+# Source: monitoring-agent/charts/kepler/templates/rolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: monit-agent-kepler-clusterrole
+rules:
+  - apiGroups: [""]
+    resources:
+      - nodes/metrics # access /metrics/resource
+      - nodes/proxy
+      - nodes/stats
+      - pods
+    verbs:
+      - get
+      - watch
+      - list
 ---
 # Source: monitoring-agent/charts/kube-prometheus/charts/kube-state-metrics/templates/clusterrole.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -420,6 +450,20 @@ rules:
     verbs:
       - "get"
 ---
+# Source: monitoring-agent/charts/kepler/templates/rolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: monit-agent-kepler-clusterrole-binding
+roleRef:
+  kind: ClusterRole
+  name: monit-agent-kepler-clusterrole
+  apiGroup: "rbac.authorization.k8s.io"
+subjects:
+  - kind: ServiceAccount
+    name: monit-agent-kepler
+    namespace: cognifog-dev
+---
 # Source: monitoring-agent/charts/kube-prometheus/charts/kube-state-metrics/templates/clusterrolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -481,6 +525,29 @@ subjects:
   - kind: ServiceAccount
     name: monit-agent-kube-prometheu-prometheus
     namespace: "cognifog-dev"
+---
+# Source: monitoring-agent/charts/kepler/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: monit-agent-kepler
+  namespace: cognifog-dev
+  labels:
+    helm.sh/chart: kepler-0.5.12
+    app.kubernetes.io/name: kepler
+    app.kubernetes.io/component: exporter
+    app.kubernetes.io/version: "release-0.7.12"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 9102
+      targetPort: http
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: kepler
+    app.kubernetes.io/component: exporter
 ---
 # Source: monitoring-agent/charts/kube-prometheus/charts/kube-state-metrics/templates/service.yaml
 apiVersion: v1
@@ -710,6 +777,118 @@ spec:
     app.kubernetes.io/name: prometheus
     app.kubernetes.io/component: prometheus
     prometheus: monit-agent-kube-prometheu-prometheus
+---
+# Source: monitoring-agent/charts/kepler/templates/daemonset.yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: monit-agent-kepler
+  namespace: cognifog-dev
+  labels:
+    helm.sh/chart: kepler-0.5.12
+    app.kubernetes.io/name: kepler
+    app.kubernetes.io/component: exporter
+    app.kubernetes.io/version: "release-0.7.12"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kepler
+      app.kubernetes.io/component: exporter
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kepler
+        app.kubernetes.io/component: exporter
+    spec:
+      hostNetwork: true
+      serviceAccountName: monit-agent-kepler
+      containers:
+      - name: kepler-exporter
+        image: "quay.io/sustainable_computing_io/kepler:release-0.7.12"
+        imagePullPolicy: Always
+        securityContext:
+            privileged: true
+        args:
+          - -v=$(KEPLER_LOG_LEVEL)
+        env:
+          - name: NODE_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: METRIC_PATH
+            value: "/metrics"
+          - name: BIND_ADDRESS
+            value: "0.0.0.0:9102"
+          - name: "CGROUP_METRICS"
+            value: "*"
+          - name: "CPU_ARCH_OVERRIDE"
+            value: ""
+          - name: "ENABLE_EBPF_CGROUPID"
+            value: "true"
+          - name: "ENABLE_GPU"
+            value: "true"
+          - name: "ENABLE_PROCESS_METRICS"
+            value: "false"
+          - name: "ENABLE_QAT"
+            value: "false"
+          - name: "EXPOSE_CGROUP_METRICS"
+            value: "false"
+          - name: "EXPOSE_HW_COUNTER_METRICS"
+            value: "true"
+          - name: "EXPOSE_IRQ_COUNTER_METRICS"
+            value: "true"
+          - name: "KEPLER_LOG_LEVEL"
+            value: "1"
+        ports:
+        - containerPort: 9102
+          hostPort: 9102
+          name: http
+        livenessProbe:
+          failureThreshold: 5
+          httpGet:
+            path: /healthz
+            port: 9102
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 60
+          successThreshold: 1
+          timeoutSeconds: 10
+        volumeMounts:
+          - name: lib-modules
+            mountPath: /lib/modules
+          - name: tracing
+            mountPath: /sys
+          - name: proc
+            mountPath: /proc
+          - name: usr-src
+            mountPath: /usr/src
+      volumes:
+        - name: lib-modules
+          hostPath:
+            path: /lib/modules
+            type: DirectoryOrCreate
+        - name: tracing
+          hostPath:
+            path: /sys
+            type: Directory
+        - name: proc
+          hostPath:
+            path: /proc
+            type: Directory
+        - name: usr-src
+          hostPath:
+            path: /usr/src
+            type: Directory
+      nodeSelector:
+        kubernetes.io/os: linux
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
 ---
 # Source: monitoring-agent/charts/kube-prometheus/charts/node-exporter/templates/daemonset.yaml
 apiVersion: apps/v1
@@ -1187,7 +1366,7 @@ spec:
   scrapeConfigNamespaceSelector: {}
   enableRemoteWriteReceiver: false
   remoteWrite:
-    - url: http://monitoring-manager-thanos-receive:19291/api/v1/receive
+    - url: http://monit-manager-thanos-receive:19291/api/v1/receive
       writeRelabelConfigs:
       - regex: (.*)
         replacement: manager
@@ -1296,6 +1475,43 @@ spec:
         timeoutSeconds: 5
         failureThreshold: 6
         successThreshold: 1
+---
+# Source: monitoring-agent/charts/kepler/templates/servicemonitor.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: monit-agent-kepler-prometheus-exporter
+  namespace: cognifog-dev
+  labels:
+    helm.sh/chart: kepler-0.5.12
+    app.kubernetes.io/name: kepler
+    app.kubernetes.io/component: exporter
+    app.kubernetes.io/version: "release-0.7.12"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  jobLabel: app.kubernetes.io/name
+  attachMetadata:
+    node: false
+  endpoints:
+    - port: http
+      interval: 30s
+      scrapeTimeout: 5s
+      path: /metrics
+      scheme: http
+      relabelings:
+        - action: replace
+          regex: (.*)
+          replacement: $1
+          sourceLabels:
+          - __meta_kubernetes_pod_node_name
+          targetLabel: instance
+  namespaceSelector:
+    matchNames:
+      - cognifog-dev
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kepler
+      app.kubernetes.io/component: exporter
 ---
 # Source: monitoring-agent/charts/kube-prometheus/charts/kube-state-metrics/templates/servicemonitor.yaml
 apiVersion: monitoring.coreos.com/v1
