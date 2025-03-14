@@ -1,0 +1,9 @@
+dependencies:
+- name: kube-prometheus
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 8.22.4
+- name: kepler
+  repository: https://sustainable-computing-io.github.io/kepler-helm-chart
+  version: 0.5.12
+digest: sha256:5c5d491297fa81e9bee8943744ab76b54c09de8ff233f86b0f02dee99110a74a
+generated: "2024-12-16T10:05:31.540965345+01:00"

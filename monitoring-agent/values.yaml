@@ -21,3 +21,7 @@ kube-prometheus:
 
   alertmanager:
     enabled: false
+
+kepler:
+  serviceMonitor:
+    enabled: true
