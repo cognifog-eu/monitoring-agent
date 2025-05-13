@@ -22,6 +22,10 @@ kube-prometheus:
   alertmanager:
     enabled: false
 
+  kube-state-metrics:
+    extraArgs:
+      metric-labels-allowlist: "pods=[*]"
+
 kepler:
   serviceMonitor:
     enabled: true
